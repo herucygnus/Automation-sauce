@@ -1,8 +1,8 @@
 import { test } from '@playwright/test';
-import { LoginPage } from '../pages/LoginPage';
-import { ProductsPage } from '../pages/ProductsPage';
-import { items } from '../data/mock_data';
-import { CartPage } from '../pages/CartPage';
+import { LoginPage } from '../../lib/pages/LoginPage';
+import { ProductsPage } from '../../lib/pages/ProductsPage';
+import { items } from '../../lib/data/mock_data';
+import { CartPage } from '../../lib/pages/CartPage';
 
 test.describe('Product Functionality', () => {
   

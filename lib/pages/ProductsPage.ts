@@ -1,5 +1,5 @@
 import { test, type Page, type Locator, expect } from '@playwright/test';
-import { ProductsPageLocators } from './ProductsPage.locators';
+import { ProductsPageLocators } from '../locators/ProductsPage.locators';
 
 export class ProductsPage {
     readonly page: Page;
