@@ -57,6 +57,7 @@ This framework currently automates the following primary test scenarios:
     This command installs Playwright and other required packages from `package.json`.
     ```bash
     npm install
+    npx playwright install  
     ```
 
 3.  **Create and Configure the Environment File**
