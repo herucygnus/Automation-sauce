@@ -49,8 +49,8 @@ This framework currently automates the following primary test scenarios:
 
 1.  **Clone the Repository**
     ```bash
-    git clone [https://github.com/herucygnus/Automation-sauce.git](https://github.com/herucygnus/Automation-sauce.git)
-    cd Automation-sauce
+    git clone https://github.com/herucygnus/automation-sauce.git
+    cd automation-sauce
     ```
 
 2.  **Install Dependencies**
