@@ -1,59 +1,50 @@
-// Jenkinsfile dengan pendekatan baru menggunakan docker.image().inside()
+// File: Jenkinsfile (simpan di folder utama proyekmu)
 
 pipeline {
-    // 1. Agent: Jalankan di node Jenkins mana saja yang tersedia.
-    // Controller utama sudah cukup untuk tahap ini.
+    // 1. Agent: Gunakan 'agent any'.
+    // Ini memberitahu Jenkins untuk berjalan di environment utamanya,
+    // dan kita akan memanggil Docker secara manual dari sana.
+    // Ini adalah cara yang paling andal untuk setup lokal.
     agent any
 
-    // 2. Stages: Tahapan pipeline
+    // 2. Environment: Variabel yang akan kita gunakan di pipeline
+    environment {
+        SAUCEDEMO_CREDS = credentials('saucedemo-creds')
+        DOCKER_IMAGE = 'mcr.microsoft.com/playwright:v1.44.0-jammy'
+    }
+
+    // 3. Stages: Kumpulan tahapan yang akan dijalankan
     stages {
-        // Kita gabungkan semua logika ke dalam satu stage utama
-        // yang berjalan sepenuhnya di dalam kontainer Docker.
-        stage('Run Tests inside Docker') {
+        stage('Checkout Code') {
             steps {
-                // 3. Menjalankan kontainer Playwright
-                // Semua yang ada di dalam blok '{...}' ini akan dieksekusi
-                // DI DALAM kontainer 'mcr.microsoft.com/playwright:v1.44.0-jammy'.
-                // KOREKSI: Menambahkan 'args:' untuk menamai argumen.
-                docker.image('mcr.microsoft.com/playwright:v1.44.0-jammy').inside(args: '-u root') {
-                    
-                    // 4. Kita gunakan 'script' block untuk fleksibilitas
-                    script {
-                        // Tahap A: Checkout Code (di dalam kontainer)
-                        echo 'Checking out code...'
-                        checkout scm
+                git url: 'https://github.com/herucygnus/Automation-sauce.git', branch: 'main'
+            }
+        }
 
-                        // Tahap B: Install Dependencies (di dalam kontainer)
-                        echo 'Installing NPM packages...'
-                        sh 'npm install'
-
-                        // Tahap C: Run E2E Tests (di dalam kontainer)
-                        echo 'Running Playwright tests...'
-                        
-                        // Ini adalah cara yang lebih aman untuk menggunakan credentials
-                        // di dalam scripted pipeline.
-                        withCredentials([usernamePassword(credentialsId: 'saucedemo-creds', usernameVariable: 'STANDARD_USERNAME', passwordVariable: 'PASSWORD')]) {
-                            // Variabel STANDARD_USERNAME dan PASSWORD sekarang tersedia
-                            // untuk perintah di bawah ini.
-                            sh 'npx playwright test'
-                        }
-                    }
-                }
+        stage('Install & Run E2E Tests inside Docker') {
+            steps {
+                echo 'Running tests inside Docker container...'
+                // Perintah 'sh' ini memanggil Docker dari host machine
+                // untuk menjalankan tes di dalam kontainer Playwright yang bersih.
+                sh """
+                    docker run --rm --ipc=host \\
+                        -v "${pwd()}:/work" \\
+                        -w /work \\
+                        -e BASE_URL=https://www.saucedemo.com \\
+                        -e STANDARD_USERNAME=${SAUCEDEMO_CREDS_USR} \\
+                        -e PASSWORD=${SAUCEDEMO_CREDS_PSW} \\
+                        ${DOCKER_IMAGE} \\
+                        sh -c 'npm install && npx playwright test'
+                """
             }
         }
     }
 
-    // 5. Post-Actions: Tetap sama, ini sudah benar.
+    // 4. Post-Actions: Aksi setelah semua tahapan selesai
     post {
         always {
-            echo 'Archiving test reports...'
-            
-            // Menyimpan laporan HTML untuk dilihat manual
+            echo 'Archiving test report...'
             archiveArtifacts artifacts: 'playwright-report/', allowEmptyArchive: true
-            
-            // Menyimpan laporan JUnit XML agar Jenkins bisa
-            // menampilkan grafik tren hasil tes (lulus/gagal).
-            junit 'test-results/**/*.xml'
         }
     }
 }
