@@ -14,7 +14,8 @@ pipeline {
                 // 3. Menjalankan kontainer Playwright
                 // Semua yang ada di dalam blok '{...}' ini akan dieksekusi
                 // DI DALAM kontainer 'mcr.microsoft.com/playwright:v1.44.0-jammy'.
-                docker.image('mcr.microsoft.com/playwright:v1.44.0-jammy').inside('-u root') {
+                // KOREKSI: Menambahkan 'args:' untuk menamai argumen.
+                docker.image('mcr.microsoft.com/playwright:v1.44.0-jammy').inside(args: '-u root') {
                     
                     // 4. Kita gunakan 'script' block untuk fleksibilitas
                     script {
