@@ -1,64 +1,48 @@
-// Jenkinsfile yang sudah diperbaiki dan disederhanakan
+// Jenkinsfile dengan pendekatan baru menggunakan docker.image().inside()
 
 pipeline {
-    // Agent tetap sama, ini sudah benar.
-    agent {
-        docker {
-            image 'mcr.microsoft.com/playwright:v1.44.0-jammy'
-            args '-u root' // Menjalankan sebagai root untuk menghindari masalah izin file di dalam kontainer
-        }
-    }
+    // 1. Agent: Jalankan di node Jenkins mana saja yang tersedia.
+    // Controller utama sudah cukup untuk tahap ini.
+    agent any
 
-    // Di environment, kita hanya definisikan nilai-nilai sederhana.
-    environment {
-        SAUCEDEMO_CREDS = credentials('saucedemo-creds')
-        BASE_URL        = "https://www.saucedemo.com"
-    }
-
+    // 2. Stages: Tahapan pipeline
     stages {
-        // Tahap 1: Checkout Code
-        stage('Checkout Code') {
+        // Kita gabungkan semua logika ke dalam satu stage utama
+        // yang berjalan sepenuhnya di dalam kontainer Docker.
+        stage('Run Tests inside Docker') {
             steps {
-                checkout scm
-            }
-        }
+                // 3. Menjalankan kontainer Playwright
+                // Semua yang ada di dalam blok '{...}' ini akan dieksekusi
+                // DI DALAM kontainer 'mcr.microsoft.com/playwright:v1.44.0-jammy'.
+                docker.image('mcr.microsoft.com/playwright:v1.44.0-jammy').inside('-u root') {
+                    
+                    // 4. Kita gunakan 'script' block untuk fleksibilitas
+                    script {
+                        // Tahap A: Checkout Code (di dalam kontainer)
+                        echo 'Checking out code...'
+                        checkout scm
 
-        // Tahap 2: Menyiapkan Variabel
-        // KITA PINDAHKAN LOGIKA .split() KE DALAM SCRIPT BLOCK DI SINI
-        stage('Prepare Variables') {
-            steps {
-                script {
-                    echo "Preparing credentials..."
-                    // Memisahkan username dan password dari variabel SAUCEDEMO_CREDS
-                    // dan menyimpannya ke environment variable baru untuk pipeline ini.
-                    def parts = SAUCEDEMO_CREDS.split(':')
-                    env.STANDARD_USERNAME = parts[0]
-                    env.PASSWORD          = parts[1]
+                        // Tahap B: Install Dependencies (di dalam kontainer)
+                        echo 'Installing NPM packages...'
+                        sh 'npm install'
+
+                        // Tahap C: Run E2E Tests (di dalam kontainer)
+                        echo 'Running Playwright tests...'
+                        
+                        // Ini adalah cara yang lebih aman untuk menggunakan credentials
+                        // di dalam scripted pipeline.
+                        withCredentials([usernamePassword(credentialsId: 'saucedemo-creds', usernameVariable: 'STANDARD_USERNAME', passwordVariable: 'PASSWORD')]) {
+                            // Variabel STANDARD_USERNAME dan PASSWORD sekarang tersedia
+                            // untuk perintah di bawah ini.
+                            sh 'npx playwright test'
+                        }
+                    }
                 }
             }
         }
-
-        // Tahap 3: Install Dependencies
-        stage('Install Dependencies') {
-            steps {
-                echo 'Installing NPM packages...'
-                sh 'npm install'
-            }
-        }
-
-        // Tahap 4: Run E2E Tests
-        // Variabel yang kita buat di script block sekarang bisa diakses di sini.
-        stage('Run E2E Tests') {
-            steps {
-                echo "Running Playwright tests for user: ${env.STANDARD_USERNAME}"
-                // Perintah ini akan menggunakan variabel env.STANDARD_USERNAME dan env.PASSWORD
-                // yang sudah diekspor oleh kode Playwright-mu.
-                sh 'npx playwright test'
-            }
-        }
     }
 
-    // Post-Actions: Tetap sama, ini sudah benar.
+    // 5. Post-Actions: Tetap sama, ini sudah benar.
     post {
         always {
             echo 'Archiving test reports...'
