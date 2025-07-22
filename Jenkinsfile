@@ -7,7 +7,13 @@ pipeline {
     }
 
     stages {
-        // HAPUS STAGE 'Checkout Code' DARI SINI
+        // TAMBAHKAN STAGE BARU INI DI PALING ATAS
+        stage('Clean Workspace') {
+            steps {
+                echo 'Cleaning up the workspace before build...'
+                cleanWs()
+            }
+        }
 
         stage('Install & Run E2E Tests inside Docker') {
             steps {
