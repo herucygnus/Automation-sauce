@@ -1,70 +1,70 @@
 
 
 pipeline {
-    // 1. Agent: Di mana pipeline ini akan berjalan?
-    // Kita menggunakan Docker agent dengan image resmi dari Playwright.
-    // Ini memastikan semua browser dan Node.js sudah terinstal dengan benar.
+    // Agent tetap sama, ini sudah benar.
     agent {
         docker {
             image 'mcr.microsoft.com/playwright:v1.44.0-jammy'
-            args '-u root' // Menjalankan sebagai root untuk menghindari masalah perizinan
+            args '-u root' // Menjalankan sebagai root untuk menghindari masalah izin file di dalam kontainer
         }
     }
 
-    // 2. Environment: Variabel yang akan kita gunakan di pipeline
-    // Jenkins akan otomatis membaca kredensial dari "Credentials Manager"
-    // dan menyuntikkannya sebagai environment variable.
+    // KITA PERBAIKI BAGIAN INI
+    // Semua variabel yang dibutuhkan kita definisikan di sini.
     environment {
-        // 'saucedemo-creds' adalah ID dari kredensial yang kamu simpan di Jenkins.
-        // Ini adalah cara yang aman untuk menangani data rahasia.
+        // Ini adalah cara yang benar untuk mem-binding username dan password
+        // dari sebuah credential dengan ID 'saucedemo-creds'.
+        // Jenkins akan otomatis mengisi variabel USERNAME dan PASSWORD.
         SAUCEDEMO_CREDS = credentials('saucedemo-creds')
+        
+        // Langsung definisikan BASE_URL di sini agar konsisten
+        BASE_URL        = "https://www.saucedemo.com"
+
+        // Kita juga bisa langsung mengekstrak username dan password ke variabel baru
+        // agar bisa digunakan di dalam script.
+        STANDARD_USERNAME = SAUCEDEMO_CREDS.split(':')[0]
+        PASSWORD          = SAUCEDEMO_CREDS.split(':')[1]
     }
 
-    // 3. Stages: Kumpulan tahapan yang akan dijalankan
     stages {
-        // Tahap 1: Mengunduh kode dari repositori Git
+        // Tahap 1: Checkout Code
+        // Dibuat lebih sederhana. Jenkins biasanya sudah otomatis checkout
+        // jika kamu mengkonfigurasi repo di pengaturan Job.
         stage('Checkout Code') {
             steps {
-                // 'git url' akan otomatis diisi oleh Jenkins saat dikonfigurasi
-                git url: 'https://github.com/herucygnus/automation-sauce.git', branch: 'main'
+                checkout scm
             }
         }
 
-        // Tahap 2: Menginstal semua package dari package.json
+        // Tahap 2: Install Dependencies
         stage('Install Dependencies') {
             steps {
                 echo 'Installing NPM packages...'
-                // 'sh' adalah singkatan dari "shell", untuk menjalankan perintah terminal
                 sh 'npm install'
             }
         }
 
-        // Tahap 3: Menjalankan tes Playwright
+        // Tahap 3: Run E2E Tests
+        // Tidak perlu 'withEnv' lagi karena semua sudah diatur di blok 'environment' di atas.
         stage('Run E2E Tests') {
             steps {
-                echo 'Running Playwright tests...'
-                // Kita menggunakan 'withEnv' untuk menyuntikkan variabel dari Jenkins Credentials
-                // ke dalam proses tes. Variabelnya akan menjadi process.env.STANDARD_USERNAME, dll.
-                withEnv([
-                    "BASE_URL=https://www.saucedemo.com",
-                    "STANDARD_USERNAME=${SAUCEDEMO_CREDS_USR}",
-                    "PASSWORD=${SAUCEDEMO_CREDS_PSW}"
-                    // Kamu bisa tambahkan user lain jika perlu
-                ]) {
-                    sh 'npx playwright test'
-                }
+                echo "Running Playwright tests for user: ${STANDARD_USERNAME}"
+                sh 'npx playwright test'
             }
         }
     }
 
-    // 4. Post-Actions: Apa yang dilakukan setelah semua tahapan selesai?
-    // Blok 'always' akan selalu berjalan, baik tesnya lulus maupun gagal.
+    // Post-Actions: Tetap sama, ini sudah benar.
     post {
         always {
-            echo 'Archiving test report...'
-            // Perintah ini akan menyimpan laporan HTML Playwright sebagai "artifact"
-            // sehingga bisa dilihat langsung dari halaman build di Jenkins.
+            echo 'Archiving test reports...'
+            
+            // Menyimpan laporan HTML untuk dilihat manual
             archiveArtifacts artifacts: 'playwright-report/', allowEmptyArchive: true
+            
+            // MENAMBAHKAN INI: Menyimpan laporan JUnit XML agar Jenkins bisa
+            // menampilkan grafik tren hasil tes (lulus/gagal).
+            junit 'test-results/**/*.xml'
         }
     }
 }
