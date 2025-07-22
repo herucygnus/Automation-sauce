@@ -1,4 +1,4 @@
-
+// Jenkinsfile yang sudah diperbaiki dan disederhanakan
 
 pipeline {
     // Agent tetap sama, ini sudah benar.
@@ -9,34 +9,36 @@ pipeline {
         }
     }
 
-    // KITA PERBAIKI BAGIAN INI
-    // Semua variabel yang dibutuhkan kita definisikan di sini.
+    // Di environment, kita hanya definisikan nilai-nilai sederhana.
     environment {
-        // Ini adalah cara yang benar untuk mem-binding username dan password
-        // dari sebuah credential dengan ID 'saucedemo-creds'.
-        // Jenkins akan otomatis mengisi variabel USERNAME dan PASSWORD.
         SAUCEDEMO_CREDS = credentials('saucedemo-creds')
-        
-        // Langsung definisikan BASE_URL di sini agar konsisten
         BASE_URL        = "https://www.saucedemo.com"
-
-        // Kita juga bisa langsung mengekstrak username dan password ke variabel baru
-        // agar bisa digunakan di dalam script.
-        STANDARD_USERNAME = SAUCEDEMO_CREDS.split(':')[0]
-        PASSWORD          = SAUCEDEMO_CREDS.split(':')[1]
     }
 
     stages {
         // Tahap 1: Checkout Code
-        // Dibuat lebih sederhana. Jenkins biasanya sudah otomatis checkout
-        // jika kamu mengkonfigurasi repo di pengaturan Job.
         stage('Checkout Code') {
             steps {
                 checkout scm
             }
         }
 
-        // Tahap 2: Install Dependencies
+        // Tahap 2: Menyiapkan Variabel
+        // KITA PINDAHKAN LOGIKA .split() KE DALAM SCRIPT BLOCK DI SINI
+        stage('Prepare Variables') {
+            steps {
+                script {
+                    echo "Preparing credentials..."
+                    // Memisahkan username dan password dari variabel SAUCEDEMO_CREDS
+                    // dan menyimpannya ke environment variable baru untuk pipeline ini.
+                    def parts = SAUCEDEMO_CREDS.split(':')
+                    env.STANDARD_USERNAME = parts[0]
+                    env.PASSWORD          = parts[1]
+                }
+            }
+        }
+
+        // Tahap 3: Install Dependencies
         stage('Install Dependencies') {
             steps {
                 echo 'Installing NPM packages...'
@@ -44,11 +46,13 @@ pipeline {
             }
         }
 
-        // Tahap 3: Run E2E Tests
-        // Tidak perlu 'withEnv' lagi karena semua sudah diatur di blok 'environment' di atas.
+        // Tahap 4: Run E2E Tests
+        // Variabel yang kita buat di script block sekarang bisa diakses di sini.
         stage('Run E2E Tests') {
             steps {
-                echo "Running Playwright tests for user: ${STANDARD_USERNAME}"
+                echo "Running Playwright tests for user: ${env.STANDARD_USERNAME}"
+                // Perintah ini akan menggunakan variabel env.STANDARD_USERNAME dan env.PASSWORD
+                // yang sudah diekspor oleh kode Playwright-mu.
                 sh 'npx playwright test'
             }
         }
@@ -62,7 +66,7 @@ pipeline {
             // Menyimpan laporan HTML untuk dilihat manual
             archiveArtifacts artifacts: 'playwright-report/', allowEmptyArchive: true
             
-            // MENAMBAHKAN INI: Menyimpan laporan JUnit XML agar Jenkins bisa
+            // Menyimpan laporan JUnit XML agar Jenkins bisa
             // menampilkan grafik tren hasil tes (lulus/gagal).
             junit 'test-results/**/*.xml'
         }
