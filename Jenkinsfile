@@ -34,7 +34,7 @@ pipeline {
                         -e STANDARD_USERNAME=${SAUCEDEMO_CREDS_USR} \\
                         -e PASSWORD=${SAUCEDEMO_CREDS_PSW} \\
                         ${DOCKER_IMAGE} \\
-                        sh -c 'npm install && npx playwright test'
+                        sh -c 'npm install && npx playwright install && npx playwright test'
                 """
             }
         }
