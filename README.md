@@ -10,34 +10,40 @@ This project provides a suite of automated tests covering critical user flows of
 * **Page Object Model (POM):** A clean separation between test logic (`specs`), page elements (`locators`), and page actions (`pages`).
 * **Environment-based Configuration:** Securely manages credentials and base URLs using `.env` files, keeping sensitive data out of the codebase.
 * **Dynamic Locators:** Implements functions to generate locators dynamically, making the framework scalable for elements that share a common pattern (e.g., "Add to Cart" buttons).
+* **Data-Driven Testing:** Supports running test cases with multiple data sets to validate various scenarios efficiently.
+* **CSS Escaping:** Utilizes the `css.escape` library to handle special characters in CSS selectors.
 
 ## ✅ Covered Test Cases
 
 This framework currently automates the following primary test scenarios:
 
-1.  **Add "Sauce Labs Backpack" to Cart:**
+1.  **Add Product to Cart (Data-Driven):**
     * Logs in as a standard user.
     * Verifies that the shopping cart is initially empty.
-    * Adds the "Sauce Labs Backpack" to the cart.
-    * Verifies that the cart icon updates to show 1 item.
-    * Navigates to the cart page and verifies that the "Sauce Labs Backpack" is listed correctly.
+    * Adds a product (e.g., "Sauce Labs Backpack", "Sauce Labs Fleece Jacket") to the cart based on test data.
+    * Verifies that the cart icon updates to show the correct number of items.
+    * Navigates to the cart page and verifies that the selected product is listed correctly.
 
-2.  **Add "Sauce Labs Fleece Jacket" to Cart:**
-    * Logs in as a standard user.
-    * Adds the "Sauce Labs Fleece Jacket" to the cart.
-    * Navigates to the cart page and verifies that the correct item is present.
-
-3.  **Navigate to the 'About' Page:**
+2.  **Navigate to the 'About' Page:**
     * Logs in as a standard user.
     * Clicks the hamburger menu button.
     * Clicks the 'About' link from the sidebar.
     * Verifies that the page successfully navigates to the Sauce Labs corporate website.
 
+3.  **Add Product to Cart Based on Text/Search:**
+    * Logs in as a standard user.
+    * Searches for a product using the search bar or selects it based on displayed text.
+    * Adds the product to the cart.
+    * Verifies that the cart icon updates to reflect the added product.
+    * Confirms that the product is listed correctly on the cart page.
+
 ## 🛠️ Tech Stack
 
 * **Framework:** [Playwright](https://playwright.dev/)
 * **Language:** [TypeScript](https://www.typescriptlang.org/)
-* **Dependencies:** `dotenv` for environment variable management.
+* **Dependencies:** 
+  * `dotenv` for environment variable management.
+  * `css.escape` for handling special characters in CSS selectors.
 
 ## ⚙️ Setup & Execution
 
@@ -90,4 +96,4 @@ All commands should be run from the root directory of the project.
 * **View the HTML Report after a run:**
     ```bash
     npx playwright show-report
-    
+
