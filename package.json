@@ -11,5 +11,8 @@
     "@playwright/test": "^1.53.2",
     "@types/node": "^24.0.12",
     "dotenv": "^17.1.0"
+  },
+  "dependencies": {
+    "css.escape": "^1.5.1"
   }
 }

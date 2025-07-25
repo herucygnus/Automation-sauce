@@ -1,5 +1,9 @@
 import { test, type Page, type Locator, expect } from '@playwright/test';
 import { ProductsPageLocators } from '../locators/ProductsPage.locators';
+import { items } from '../data/mock_data';
+import cssEscape from 'css.escape';
+
+const listItem = Object.entries(items)
 
 export class ProductsPage {
     readonly page: Page;
@@ -56,7 +60,7 @@ export class ProductsPage {
           });
 
         await test.step(`Should change into remove button on"${productName}"`, async () => {
-            const formattedName = productName.toLowerCase().replace(/ /g, '-');
+            const formattedName = cssEscape(productName.toLowerCase().replace(/ /g, '-'));
             const removeButton = this.page.locator(`#remove-${formattedName}`);
 
             await expect(removeButton).toBeVisible();
@@ -93,6 +97,18 @@ export class ProductsPage {
         await test.step('Should change into correct URL', async () => {
             await expect(this.page).toHaveURL('https://saucelabs.com/');
         })
+      }
+
+      async addProductBaseOnText(searchText: string) {
+        const lowerSearch = searchText.toLowerCase();
+        for (const [key, productName] of listItem) {
+          if (productName.toLowerCase().includes(lowerSearch)) {
+            await test.step(`Add product "${productName}" to cart`, async () => {
+              const locatorString = ProductsPageLocators.addCart_Button(productName);
+              await this.page.locator(locatorString).click();
+            });
+          }
+        }
       }
 
 }

@@ -1,3 +1,6 @@
+
+import cssEscape from 'css.escape';
+
 export const ProductsPageLocators = {
   titlePage: '.title',
   headerLabel: '.header_label',
@@ -11,7 +14,7 @@ export const ProductsPageLocators = {
   itemImage: '.inventory_item_img',
   itemPrice: '.inventory_item_price',
   addCart_Button: (productName: string) => {
-    const formattedName = productName.toLowerCase().replace(/ /g, '-');
+    const formattedName = cssEscape(productName.toLowerCase().replace(/ /g, '-'));
     return `#add-to-cart-${formattedName}`;
   },
 };
